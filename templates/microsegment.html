@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Microsegmentation{% endblock %}
+
+{% block section1content %}
+<div>
+  <div class="row" style="margin-left:3px;">
+    <h5>Endpoint Selection</h5>
+    <form action="/" method="post" style="position:absolute;right:30px;display:none;" id="reset_endpointselection">
+      <input type="submit" id="reset" value="Reset">
+    </form>
+  </div>
+  <div class="row" style="margin-left:3px;">
+    <form action="{{ url_for('submit_switch') }}" method="post" id="switch_selection">
+      <label for="switch">Select a switch: </label>
+      <select name="switch" id="switch"></select>
+      <input type="submit" id="submit_switch" style="display:inline" onclick="loading_switch()">
+    </form>
+    <div class="loader loader--small" aria-label="Loading, please wait..." id="loading_switch" style="display:none">
+        <div class="wrapper">
+            <div class="wheel" style="width:20px;height:20px;"></div>
+        </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="row" style="margin-left:3px;">
+  <form action="{{ url_for('submit_endpoint') }}" method="post" id="endpoint_selection" style="display:none">
+    <label for="endpoint">Select a connected endpoint: </label>
+    <select name="endpoint" id="endpoint"></select>
+    <input type="submit" id="submit_endpoint" style="display:inline" onclick="loading_endpoint()">
+  </form>
+  <div class="loader loader--small" aria-label="Loading, please wait..." id="loading_endpoint" style="display:none">
+      <div class="wrapper">
+          <div class="wheel" style="width:20px;height:20px;"></div>
+      </div>
+  </div>
+</div>
+
+<div id="maintenance" style="display:none;">
+  <br>
+  <div class="row" style="margin-left:3px;">
+  <h5>Maintenance</h5>
+  </div>
+
+  <div id="noMaintenance" style="display:none;">
+    <div class="alert alert--info" >
+      <div class="alert__icon icon-info-outline"></div>
+      <div class="alert__message">The endpoint is currently NOT segmented for maintenance.</div>
+    </div>
+    <div class="row" style="margin-left:3px;">
+      <form action="{{ url_for('submit_maintenance') }}" method="post">
+        <input type="checkbox" id="do_maintenance" name="do_maintenance" checked style="display:none">
+        <button class="btn" onclick="loading_do_maintenance()">Turn Maintenance Mode On</button>
+      </form>
+      <div class="loader loader--small" aria-label="Loading, please wait..." id="loading_do_maintenance" style="display:none">
+        <div class="wrapper">
+            <div class="wheel"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+    <div id="yesMaintenance" style="display:none;">
+      <div class="alert alert--info" >
+        <div class="alert__icon icon-info-outline"></div>
+        <div class="alert__message">The endpoint is currently segmented for maintenance.</div>
+      </div>
+      <div class="row" style="margin-left:3px;">
+
+        <form action="{{ url_for('submit_maintenance') }}" method="post">
+          <input type="checkbox" id="undo_maintenance" name="undo_maintenance" checked style="display:none">
+          <button class="btn" onclick="loading_undo_maintenance()">Turn Maintenance Mode Off</button>
+        </form>
+        <div class="loader loader--small" aria-label="Loading, please wait..." id="loading_undo_maintenance" style="display:none">
+          <div class="wrapper">
+              <div class="wheel"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block section3content %}
+<div id="attributes" style="display:none">
+<h5>Attributes of Selected Endpoint</h5>
+<table class="table table--lined table--compressed">
+  <tbody>
+    <tr>
+      <td>Name</td>
+      <td>{{ endpoint_details['name'] }}</td>
+    </tr>
+    <tr>
+      <td>MAC Address</td>
+      <td>{{ endpoint_details['mac'] }}</td>
+    </tr>
+    <tr>
+      <td>IP Address</td>
+      <td>{{ endpoint_details['selected_endpoint'] }}</td>
+    </tr>
+    <tr>
+      <td>Username</td>
+      <td>{{ endpoint_details['username'] }}</td>
+    </tr>
+    <tr>
+      <td>Description</td>
+      <td>{{ endpoint_details['description'] }}</td>
+    </tr>
+    <tr>
+      <td>Static Assignment</td>
+      <td>{{ endpoint_details['staticassignment'] }}</td>
+    </tr>
+    <tr>
+      <td>Endpoint Profile</td>
+      <td>{{ endpoint_details['endpointprofile'] }}</td>
+    </tr>
+    <tr>
+      <td>Static Group Assignment</td>
+      <td>{{ endpoint_details['staticgroupassignment'] }}</td>
+    </tr>
+    <tr>
+      <td>Identity Group Assignment</td>
+      <td>{{ endpoint_details['identitygroupassignment'] }}</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<script>
+  if ({{ alert }} === 1) {
+    alert('Something went wrong. Please try again.')
+  }
+
+  if ({{ logic }} === 1) {
+    var endpoint_form = document.getElementById("endpoint_selection");
+    endpoint_form.style.display = "inline";
+    var submit_switch = document.getElementById("submit_switch");
+    submit_switch.style.display = "none";
+    var reset_endpointselection = document.getElementById("reset_endpointselection");
+    reset_endpointselection.style.display = "inline";
+  } else if ({{ logic }} === 2) {
+    var endpoint_form = document.getElementById("endpoint_selection");
+    endpoint_form.style.display = "inline";
+    var submit_switch = document.getElementById("submit_switch");
+    submit_switch.style.display = "none";
+    var submit_endpoint = document.getElementById("submit_endpoint");
+    submit_endpoint.style.display = "none";
+    var reset_endpointselection = document.getElementById("reset_endpointselection");
+    reset_endpointselection.style.display = "inline";
+    var attributes = document.getElementById("attributes");
+    attributes.style.display = "inline";
+    var panel_donotshow = document.getElementById("panel_donotshow");
+    panel_donotshow.style.display = "inline";
+    var compare = {{ select_maintenance }};
+    if (compare === true ) {
+      var noMaintenance = document.getElementById("noMaintenance");
+      noMaintenance.style.display = "inline";
+    } else {
+      var yesMaintenance = document.getElementById("yesMaintenance");
+      yesMaintenance.style.display = "inline";
+    }
+
+    var maintenance = document.getElementById("maintenance");
+    maintenance.style.display = "inline";
+  }
+
+  function loading_switch() {
+    var wheel = document.getElementById("loading_switch");
+    wheel.style.display = "inline-block";
+    var submit_switch = document.getElementById("submit_switch");
+    submit_switch.style.display = "none";
+  }
+
+  function loading_endpoint() {
+    var wheel = document.getElementById("loading_endpoint");
+    wheel.style.display = "inline-block";
+    var submit_endpoint = document.getElementById("submit_endpoint");
+    submit_endpoint.style.display = "none";
+  }
+
+  function loading_do_maintenance() {
+    var wheel = document.getElementById("loading_do_maintenance");
+    wheel.style.display = "inline-block";
+  }
+
+  function loading_undo_maintenance() {
+    var wheel = document.getElementById("loading_undo_maintenance");
+    wheel.style.display = "inline-block";
+  }
+
+  var switch_choices = {{ switches | safe }};
+  console.log(switch_choices);
+  var switch_choices_length = switch_choices.length;
+  for (var i = 0; i < switch_choices_length; i++) {
+    var option = document.createElement('OPTION');
+    var option_text = document.createTextNode(switch_choices[i]);
+    console.log(option_text);
+    option.appendChild(option_text);
+    document.getElementById("switch").appendChild(option);
+  }
+
+  var endpoint_choices = {{ endpoints | safe }};
+  console.log(endpoint_choices);
+  var endpoint_choices_length = endpoint_choices.length;
+  for (var i = 0; i < endpoint_choices_length; i++) {
+    var option = document.createElement('OPTION');
+    var option_text = document.createTextNode(endpoint_choices[i]['ip']);
+    console.log(option_text);
+    option.appendChild(option_text);
+    document.getElementById("endpoint").appendChild(option);
+  }
+
+</script>
+
+{% endblock %}
+
+{% block js %}
+
+{% endblock %}
